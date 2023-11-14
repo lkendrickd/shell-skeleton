@@ -15,7 +15,7 @@ This bash script provides a robust starting point for creating new bash scripts.
 - Templated functions for common tasks
 
 ## Usage
-By default, you can run the script with the following command:
+By default, you can run the script with the following command and the --config to a config file is COMPLETELY OPTIONAL:
 ```bash
 ./bash-skeleton.sh --foo [value] --config /path/to/config
 ```
