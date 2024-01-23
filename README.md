@@ -21,13 +21,13 @@ By default, you can run the script with the following command and the --config t
 ```
 **NOTE**: You may need to chmod the script.
 
-## Config
-
-There is a sample config.env file included to show the format of the file.  Again this is completely optional and you can pass in the values via the command line.
-
 ```sh
 chmod +x shell-skeleton.sh
 ```
+
+## Config
+
+There is a sample config.env file included to show the format of the file.  Again this is completely optional and you can pass in the values via the command line.
 
 ### Options
 - `-c`, `--config`: Specify the path to the environment configuration file.
