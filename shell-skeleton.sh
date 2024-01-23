@@ -1,32 +1,30 @@
-#!/bin/bash
+#!/bin/sh
 # Author: Dennis Kendrick - denniskendrick@gmail.com
 # Description: This should contain an overall description on what
 #              this script performs.
 #              
 #
-# Primary Use Case: A fully functional and modular bash script skeleton for use in
+# Primary Use Case: A fully functional and modular sh script skeleton for use in
 #                   creating new scripts. This script is meant to be used as a
 #                   template for creating new scripts.
 #
-# Manual Execution:
-# docker pull -e hub.example.net/org/name_of_container:latest
-# docker run -it --entrypoint /bin/bash -e FOO=foovalue hub.example.net/org/name_of_container:latest
+# Execution:
 # 
-# ./bash-skeleton.sh --foo $FOO
+# ./shell-skeleton.sh --foo $FOO
 # 
 # Prereqs: Ensure any prereqs are listed
 #
 #-------------------------------------------------------------------
 # OPERATIONS - tasks that the script executes
-#   - Interacts with foo 
-#   - Calls bar API
+#   - Runs the execute function
+#   - execute then calls the bar function to show how to call a function
 #-------------------------------------------------------------------
 # Global Vars
 #-------------------------------------------------------------------
 scriptname=$(basename $0)
 
  # Required binaries for the script to execute. Modify according to your needs.
-REQUIRED_BINARIES=("curl" "which")
+REQUIRED_BINARIES="which"
 
 # Default verbose logging on 
 VERBOSE=1
@@ -45,6 +43,7 @@ execute() {
 # bar - is here to show calling of a function from execute
 bar() {
     verbose "bar successfully executed"
+    echo "BAR: $BAR"
 }
 
 #########################################################################
@@ -53,11 +52,11 @@ bar() {
 
 # check_prerequsites - checks for any prerequsites packages or binaries that need installed
 check_prerequisites() {
-    local missing_counter=0
+    missing_counter=0
     verbose "Checking for prerequisites..."
 
-    for bin in "${REQUIRED_BINARIES[@]}"; do
-        if ! command -v "$bin" &> /dev/null; then
+    for bin in $REQUIRED_BINARIES; do
+        if ! command -v "$bin" > /dev/null 2>&1; then
             echo "Missing required binary: $bin"
             missing_counter=$((missing_counter + 1))
         fi
@@ -89,7 +88,8 @@ errexit() {
 # load_config - loads the config file if it exists
 load_config() {
     if [ -f ${CONFIG} ]; then
-        source ${CONFIG}
+        . ${CONFIG}
+        verbose "Config file loaded"
     else
         errexit "Config file not found"
     fi
@@ -138,21 +138,16 @@ trap 'signal_exit ABRT' ABRT
 trap 'signal_exit KILL' KILL
 trap 'signal_exit ALRM' ALRM
 
-# usage - prints the usage of the script
-# for extra command usages define them here
+# usage - displays the usage of the script it uses the comments in the while loop below
+# to construct a usage message
 usage() {
-    echo "Debug: Entering usage function"
-    echo "Usage: $0 [OPTIONS]"
+    echo "Usage: $scriptname [OPTIONS]"
     echo
     echo "Options:"
-    echo "  -c, --config: Path to an environment config file"
-    echo "  -h, --help: Print the usage of the script"
-    echo "  -f, --foo: Example flag to demonstrate usage"
+    grep '# HELP:' "$0" | grep -v 'grep' | sed 's/# HELP: //'
     echo
-    echo "Example:"
-    echo "  $0 --foo value --config /path/to/config"
+    echo "Example: ./$scriptname --foo foovalue"
 
-    exit 0
 }
 
 # verbose - prints a verbose message
@@ -162,10 +157,11 @@ verbose() {
     fi
 }
 
-# -------------------------------------------------------------------
+######################################################################
 #  Start Script Execution
-# -------------------------------------------------------------------
-# Trap TERM, HUP, and INT signals and properly exit
+######################################################################
+
+# Trap various signals
 trap "signal_exit TERM" TERM HUP
 trap "signal_exit INT"  INT
 trap "signal_exit QUIT" QUIT
@@ -173,43 +169,32 @@ trap "signal_exit ABRT" ABRT
 trap "signal_exit KILL" KILL
 trap "signal_exit ALRM" ALRM
 
-OPTIONS=$(getopt -n "$0"  -o hc:f: --long "help,config:,foo:"  -- "$@")
-if [ ${?} -ne 0 ];
-then
-    exit 1
-fi
-
-eval set -- "$OPTIONS"
-
-while true;
-do
-    case "${1}" in
+# This loop will parse the command line arguments add or remove for your needs.
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        # HELP: -h, --help: Displays the usage of the script
         -h|--help)
             usage
-            shift;;
-
-        -c|--config)
-            CONFIG=${2}
-            shift 2;;
-
-        -f|--foo)
-            FOO=${2}
-            shift 2;;
-
-        --)
+            exit 0
             shift
-            break;;
+            ;;
+        # HELP: -c, --config: Path to a config file to load
+        -c|--config)
+            CONFIG="$2"
+            shift 2
+            ;;
+        # HELP: -f, --foo: This is a generic placeholder to show how to add an option
+        -f|--foo)
+            FOO="$2"
+            shift 2
+            ;;
+        *)
+            echo "Unknown option: $1"
+            usage
+            exit 1
+            ;;
     esac
 done
-
-info() {
-    cat << EOF
-# Check for required variables and pass in via flags. Below comments are example test values. 
-#------------------------------------------------------------------------
-# FOO: $FOO
-#------------------------------------------------------------------------
-EOF
-}
 
 # check for required prereqs
 check_prerequisites
