@@ -56,6 +56,32 @@ To run the container:
 docker run -it -v /path/to/local/config:/path/in/container/config shell-skeleton:latest --config /path/in/container/config --foo your_value 
 ```
 
+## Python Script Skeleton
+The Python version offers the same core functionality as the shell script, with additional features and a more structured approach using Python's libraries. This was created because python is just so widely used.
+
+### Usage
+Run the Python script with the following command:
+```sh
+pypython3 pythonskel.py --foo [value] --config /path/to/config.py
+```
+
+**Config**
+The Python version uses a Python file for configuration.
+- Example config.py:
+```python
+# config.py
+BAR = "This value comes from the config file"
+# Add other configuration variables as needed
+```
+
+### Options
+-c, --config: Specify the path to the Python configuration file.
+-h, --help: Display the help message and exit.
+-f, --foo: An example flag to demonstrate usage.
+-v, --verbose: Enable verbose (debug) logging.
+--log-file: Specify a file to write logs to.
+--dry-run: Show what would be done without actually performing operations.
+
 ## Development
 - The script is designed to be modular. Add new functions and features as needed.
 - It's recommended to test new changes in a controlled environment before deployment.
