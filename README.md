@@ -62,7 +62,7 @@ The Python version offers the same core functionality as the shell script, with 
 ### Usage
 Run the Python script with the following command:
 ```sh
-pypython3 pythonskel.py --foo [value] --config /path/to/config.py
+pypython3 python-skeleton.py --foo [value] --config /path/to/config.py
 ```
 
 **Config**
