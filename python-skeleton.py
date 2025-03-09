@@ -52,6 +52,31 @@
 #   OUTPUT_DIR = "/tmp/output"
 #   ```
 #
+# Arguments Handling:
+#   Command-line arguments are parsed using Python's argparse library in the 
+#   parse_arguments() function. The resulting args object is used throughout 
+#   the script to access argument values.
+#
+#   To add new command-line arguments:
+#   1. Add a new parser.add_argument() line in the parse_arguments() function
+#   2. Access your new argument via args.your_argument_name in other functions
+#
+# Environment Variables:
+#   The script can access environment variables through os.environ dictionary.
+#   Example usage:
+#   ```
+#   # Get an environment variable with a default if not set
+#   api_key = os.environ.get('API_KEY', 'default_key')
+#   
+#   # Check if an environment variable exists
+#   if 'DEBUG' in os.environ:
+#       # Enable debug mode
+#       configure_logging(verbose=True)
+#   ```
+#
+#   The print_env() function (commented out in main()) can be used to print
+#   all environment variables for debugging purposes.
+#
 # Prereqs: Ensure any prereqs are listed
 #
 #-------------------------------------------------------------------
@@ -91,7 +116,7 @@ def execute(args: argparse.Namespace) -> None:
         logger.info("Would call the bar function")
         return
     
-    logger.info("Executing Processes - NOT YET IMPLEMENTED")
+    logger.info("Executing Tasks...")
     logger.info(f"FOO: {args.foo}")
     bar()
 
@@ -100,6 +125,7 @@ def bar() -> None:
     logger.debug("bar successfully executed")
     # Access BAR from globals explicitly
     global BAR
+    # Access BAR from globals using get with default value
     bar_value: str = globals().get('BAR', 'BAR not set')
     logger.info(f"BAR: {bar_value}")
 
