@@ -77,6 +77,20 @@
 #   The print_env() function (commented out in main()) can be used to print
 #   all environment variables for debugging purposes.
 #
+# Error Handling:
+#   This script implements comprehensive error handling including:
+#   - Command line argument validation
+#   - File operation error handling (config file, log file)
+#   - Function-level try-except blocks for critical operations
+#   - Global exception handling in main() to catch unexpected errors
+#   - Proper error codes returned to the shell
+#
+#   When extending this script, follow these error handling practices:
+#   1. Validate inputs before processing
+#   2. Use try-except blocks around file operations and external calls
+#   3. Log exceptions with appropriate log levels
+#   4. Return meaningful error codes from main()
+#
 # Prereqs: Ensure any prereqs are listed
 #
 #-------------------------------------------------------------------
@@ -110,22 +124,25 @@ REQUIRED_BINARIES: List[str] = ["which"]
 
 def execute(args: argparse.Namespace) -> None:
     """Main execution function that runs the primary process"""
-    if args.dry_run:
-        logger.info("DRY RUN MODE: Showing what would be executed")
-        logger.info(f"Would execute with FOO: {args.foo}")
-        logger.info("Would call the bar function")
-        return
-    
-    logger.info("Executing Tasks...")
-    logger.info(f"FOO: {args.foo}")
-    bar()
+    try:
+        if args.dry_run:
+            logger.info("DRY RUN MODE: Showing what would be executed")
+            logger.info(f"Would execute with FOO: {args.foo}")
+            logger.info("Would call the bar function")
+            return
+        
+        logger.info("Executing Processes - NOT YET IMPLEMENTED")
+        logger.info(f"FOO: {args.foo}")
+        bar()
+    except Exception as e:
+        logger.error(f"Error in execution process: {e}")
+        raise
 
 def bar() -> None:
     """Example function to show calling of a function from execute"""
     logger.debug("bar successfully executed")
     # Access BAR from globals explicitly
     global BAR
-    # Access BAR from globals using get with default value
     bar_value: str = globals().get('BAR', 'BAR not set')
     logger.info(f"BAR: {bar_value}")
 
@@ -218,15 +235,19 @@ def configure_logging(verbose: bool = False) -> None:
     """Configure logging based on verbosity level"""
     log_level: int = logging.DEBUG if verbose else logging.INFO
     
-    # Configure root logger
-    logging.basicConfig(
-        level=log_level,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
-    
-    # Set our module's logger level
-    logger.setLevel(log_level)
+    try:
+        # Configure root logger
+        logging.basicConfig(
+            level=log_level,
+            format='%(asctime)s - %(levelname)s - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        
+        # Set our module's logger level
+        logger.setLevel(log_level)
+    except Exception as e:
+        print(f"ERROR: Failed to configure logging: {e}")
+        sys.exit(1)
 
 def parse_arguments() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
     """Parse command line arguments"""
@@ -241,7 +262,18 @@ def parse_arguments() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
     parser.add_argument("--log-file", help="Log to the specified file")
     parser.add_argument("--dry-run", action="store_true", help="Show what would be done without actually doing it")
     
-    return parser, parser.parse_args()
+    args = parser.parse_args()
+    
+    # Validate arguments
+    if args.config and not os.path.exists(args.config):
+        parser.error(f"Config file not found: {args.config}")
+    
+    if args.log_file:
+        log_dir = os.path.dirname(args.log_file)
+        if log_dir and not os.path.exists(log_dir):
+            parser.error(f"Log file directory does not exist: {log_dir}")
+    
+    return parser, args
 
 ######################################################################
 #  Start Script Execution
@@ -250,41 +282,63 @@ def parse_arguments() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
 def main() -> int:
     global parser
     
-    # Parse command line arguments
-    parser, args = parse_arguments()
-    
-    # Configure logging based on verbosity
-    configure_logging(args.verbose)
-    
-    # Add file handler if log file is specified
-    if args.log_file:
-        file_handler: logging.FileHandler = logging.FileHandler(args.log_file)
-        file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-        logger.addHandler(file_handler)
-    
-    logger.debug("Starting script execution")
-    
-    # Set up signal handlers
-    setup_signal_handlers()
-    
-    # Check for required prerequisites
-    check_prerequisites()
-    
-    # Check if config was passed in and set
-    if args.config:
-        config: bool = load_config(args.config)
-        # You might want to add globals or do something with the config here
-    else:
-        logger.info("No config file passed in, using default")
-    
-    # Uncomment below to debug the script environment variables
-    # print_env()
-    
-    # Execute main function
-    execute(args)
-    
-    logger.info("Process completed successfully.")
-    return 0
+    try:
+        # Parse command line arguments
+        parser, args = parse_arguments()
+        
+        # Configure logging based on verbosity
+        configure_logging(args.verbose)
+        
+        # Add file handler if log file is specified
+        if args.log_file:
+            try:
+                file_handler: logging.FileHandler = logging.FileHandler(args.log_file)
+                file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+                logger.addHandler(file_handler)
+            except (IOError, PermissionError) as e:
+                logger.error(f"Failed to create log file '{args.log_file}': {e}")
+                return 1
+        
+        logger.debug("Starting script execution")
+        
+        # Set up signal handlers
+        setup_signal_handlers()
+        
+        # Check for required prerequisites
+        check_prerequisites()
+        
+        # Check if config was passed in and set
+        if args.config:
+            try:
+                config: bool = load_config(args.config)
+                # You might want to add globals or do something with the config here
+            except Exception as e:
+                logger.error(f"Error loading config: {e}")
+                return 1
+        else:
+            logger.info("No config file passed in, using default")
+        
+        # Uncomment below to debug the script environment variables
+        # print_env()
+        
+        # Execute main function
+        try:
+            execute(args)
+        except Exception as e:
+            logger.error(f"Error in main execution: {e}")
+            return 1
+        
+        logger.info("Process completed successfully.")
+        return 0
+        
+    except KeyboardInterrupt:
+        logger.warning("Script execution interrupted by user")
+        return 1
+    except Exception as e:
+        # Global exception handler for unexpected errors
+        logger.critical(f"Unhandled exception: {e}")
+        logger.debug("Exception details:", exc_info=True)
+        return 1
 
 if __name__ == "__main__":
     sys.exit(main())
