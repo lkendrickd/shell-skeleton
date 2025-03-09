@@ -8,10 +8,50 @@
 #                   creating new scripts. This script is meant to be used as a
 #                   template for creating new scripts.
 #
-# Execution:
-# 
-# ./python-skeleton.py --foo FOO
-# 
+# Usage:
+#   This script accepts the following command-line arguments:
+#   -c, --config PATH     : Path to a config file to load
+#   -f, --foo VALUE       : This is a generic placeholder to show how to add an option
+#   -v, --verbose         : Enable verbose debug output
+#   --log-file PATH       : Log to the specified file
+#   --dry-run             : Show what would be done without actually doing it
+#
+# Examples:
+#   Basic execution:
+#     ./python-skeleton.py --foo "bar_value"
+#
+#   With config file and verbose output:
+#     ./python-skeleton.py --config myconfig.py --foo "test" --verbose
+#
+#   Dry run with logging to file:
+#     ./python-skeleton.py --dry-run --foo "testing" --log-file output.log
+#
+# Note on bar() function:
+#   The bar() function is currently a placeholder function that demonstrates
+#   how to call functions from the main execution flow. It should be renamed
+#   and its logic reworked to achieve a specific task in your implementation.
+#   For example, it could be renamed to process_data() and modified to process
+#   input files or perform specific calculations.
+#
+# Config File:
+#   The script can load a Python config file using the --config flag.
+#   The config file should be a valid Python script that sets variables
+#   which will be loaded into the global namespace.
+#
+#   Example config file (myconfig.py):
+#   ```
+#   # Configuration settings for python-skeleton.py
+#   
+#   # This value is accessed by the bar() function
+#   BAR = "Custom BAR value from config"
+#   
+#   # Additional configuration variables can be added as needed
+#   DEBUG_MODE = True
+#   MAX_RETRIES = 3
+#   LOG_LEVEL = "DEBUG"
+#   OUTPUT_DIR = "/tmp/output"
+#   ```
+#
 # Prereqs: Ensure any prereqs are listed
 #
 #-------------------------------------------------------------------
@@ -27,21 +67,23 @@ import argparse
 import shutil
 import logging
 from pathlib import Path
+from typing import Dict, List, Optional, Any, Tuple, NoReturn
 
 # Setup logging
 logger = logging.getLogger(__name__)
 
 # Global Vars
-scriptname = Path(__file__).name
+scriptname: str = Path(__file__).name
+parser: Optional[argparse.ArgumentParser] = None
 
 # Required binaries for the script to execute. Modify according to your needs.
-REQUIRED_BINARIES = ["which"]
+REQUIRED_BINARIES: List[str] = ["which"]
 
 #########################################################################
 # Functions
 #########################################################################
 
-def execute(args):
+def execute(args: argparse.Namespace) -> None:
     """Main execution function that runs the primary process"""
     if args.dry_run:
         logger.info("DRY RUN MODE: Showing what would be executed")
@@ -53,21 +95,21 @@ def execute(args):
     logger.info(f"FOO: {args.foo}")
     bar()
 
-def bar():
+def bar() -> None:
     """Example function to show calling of a function from execute"""
     logger.debug("bar successfully executed")
     # Access BAR from globals explicitly
     global BAR
-    bar_value = globals().get('BAR', 'BAR not set')
+    bar_value: str = globals().get('BAR', 'BAR not set')
     logger.info(f"BAR: {bar_value}")
 
 #########################################################################
 # UTILITY FUNCTIONS SECTION - functions that perform utility tasks
 #########################################################################
 
-def check_prerequisites():
+def check_prerequisites() -> None:
     """Checks for any prerequisite packages or binaries that need to be installed"""
-    missing_counter = 0
+    missing_counter: int = 0
     logger.debug("Checking for prerequisites...")
 
     for binary in REQUIRED_BINARIES:
@@ -81,23 +123,23 @@ def check_prerequisites():
 
     logger.debug("All prerequisites are met.")
 
-def check_root():
+def check_root() -> None:
     """Checks if the script is being run as root"""
     if os.geteuid() != 0:
         errexit("This script must be run as root")
 
-def errexit(message="Unknown Error"):
+def errexit(message: str = "Unknown Error") -> NoReturn:
     """Function for exit due to fatal program error
     Accepts 1 arg: string containing descriptive error message"""
     logger.critical(f"{scriptname}: {message}")
     sys.exit(1)
 
-def load_config(config_file):
+def load_config(config_file: str) -> bool:
     """Loads the config file if it exists"""
     if os.path.isfile(config_file):
         try:
             # Use more explicit approach for clarity
-            config_vars = {}
+            config_vars: Dict[str, Any] = {}
             with open(config_file) as f:
                 exec(f.read(), globals())
             logger.info("Config file loaded")
@@ -108,14 +150,14 @@ def load_config(config_file):
     else:
         errexit("Config file not found")
 
-def print_env():
+def print_env() -> None:
     """Prints all environment variables usually for debugging"""
     for key, value in sorted(os.environ.items()):
         logger.debug(f"{key}={value}")
 
-def signal_handler(signum, frame):
+def signal_handler(signum: int, frame: Any) -> None:
     """Handles signals sent to the script"""
-    signal_names = {
+    signal_names: Dict[int, str] = {
         signal.SIGINT: "INT",
         signal.SIGTERM: "TERM",
         signal.SIGHUP: "HUP",
@@ -124,7 +166,7 @@ def signal_handler(signum, frame):
         signal.SIGALRM: "ALRM"
     }
     
-    signal_name = signal_names.get(signum, "UNKNOWN")
+    signal_name: str = signal_names.get(signum, "UNKNOWN")
     
     if signal_name in ["INT", "TERM", "QUIT", "ABRT"]:
         logger.warning(f"{scriptname}: Program terminated by {signal_name} signal")
@@ -136,19 +178,19 @@ def signal_handler(signum, frame):
     else:
         errexit(f"{scriptname}: Terminating on unknown signal")
 
-def setup_signal_handlers():
+def setup_signal_handlers() -> None:
     """Set up signal handlers for various signals"""
     for sig in [signal.SIGINT, signal.SIGTERM, signal.SIGHUP, 
                 signal.SIGQUIT, signal.SIGABRT, signal.SIGALRM]:
         signal.signal(sig, signal_handler)
 
-def usage():
+def usage() -> None:
     """Displays the usage of the script using the argparse help"""
     parser.print_help()
 
-def configure_logging(verbose=False):
+def configure_logging(verbose: bool = False) -> None:
     """Configure logging based on verbosity level"""
-    log_level = logging.DEBUG if verbose else logging.INFO
+    log_level: int = logging.DEBUG if verbose else logging.INFO
     
     # Configure root logger
     logging.basicConfig(
@@ -160,7 +202,7 @@ def configure_logging(verbose=False):
     # Set our module's logger level
     logger.setLevel(log_level)
 
-def parse_arguments():
+def parse_arguments() -> Tuple[argparse.ArgumentParser, argparse.Namespace]:
     """Parse command line arguments"""
     parser = argparse.ArgumentParser(
         description="Python script skeleton",
@@ -179,7 +221,7 @@ def parse_arguments():
 #  Start Script Execution
 ######################################################################
 
-def main():
+def main() -> int:
     global parser
     
     # Parse command line arguments
@@ -190,7 +232,7 @@ def main():
     
     # Add file handler if log file is specified
     if args.log_file:
-        file_handler = logging.FileHandler(args.log_file)
+        file_handler: logging.FileHandler = logging.FileHandler(args.log_file)
         file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
         logger.addHandler(file_handler)
     
@@ -204,7 +246,7 @@ def main():
     
     # Check if config was passed in and set
     if args.config:
-        config = load_config(args.config)
+        config: bool = load_config(args.config)
         # You might want to add globals or do something with the config here
     else:
         logger.info("No config file passed in, using default")
