@@ -6,6 +6,8 @@
 ## Description
 This shell script provides a robust starting point for creating new sh scripts. It is designed to be modular and easily extendable, making it ideal for a wide range of scripting tasks. This is particularly useful for CI tasks in a CI/CD environment.  The goal is to have a single script that can be used for multiple tasks that is uniform and easy to maintain.
 
+Great for CI/CD tasks or other automated actions.
+
 ## Features
 - Command line options parsing
 - Config file support
