@@ -54,7 +54,7 @@ check_prerequisites() {
     missing_counter=0
     verbose "Checking for prerequisites..."
 
-    for bin in $REQUIRED_BINARIES; do
+    IFS=':'; for bin in $REQUIRED_BINARIES; do
         if ! type "$bin" > /dev/null 2>&1; then
             echo "Missing required binary: $bin"
             missing_counter=$((missing_counter + 1))
