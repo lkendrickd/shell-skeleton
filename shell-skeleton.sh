@@ -21,7 +21,7 @@
 #-------------------------------------------------------------------
 # Global Vars
 #-------------------------------------------------------------------
-scriptname="${0##*/}"
+scriptname="$(basename "$0")"
 
  # Required binaries for the script to execute. Modify according to your needs.
 REQUIRED_BINARIES="which"
