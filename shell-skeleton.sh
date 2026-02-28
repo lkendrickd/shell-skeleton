@@ -9,10 +9,25 @@ set -eu
 #                   creating new scripts. This script is meant to be used as a
 #                   template for creating new scripts.
 #
-# Execution:
-# 
-# ./shell-skeleton.sh --foo $FOO
-# 
+# Usage:
+#   This script accepts the following command-line arguments:
+#   -h, --help            : Display usage
+#   -v, --verbose         : Enable verbose output
+#   -n, --dry-run         : Show what would be done without acting
+#   -c, --config PATH     : Path to a shell config file to source
+#   -f, --foo VALUE       : Generic placeholder to show how to add an option
+#   --version             : Print version and exit
+#
+# Examples:
+#   Basic execution:
+#     ./shell-skeleton.sh --foo bar
+#
+#   With config and verbose:
+#     ./shell-skeleton.sh --config myconfig.sh --foo test --verbose
+#
+#   Dry run:
+#     ./shell-skeleton.sh --dry-run --foo testing
+#
 # Prereqs: Ensure any prereqs are listed
 #
 #-------------------------------------------------------------------
@@ -23,12 +38,14 @@ set -eu
 # Global Vars
 #-------------------------------------------------------------------
 scriptname="$(basename "$0")"
+VERSION="0.0.1"
 
 # Required binaries for the script to execute. Modify according to your needs.
 REQUIRED_BINARIES="which"
 
 # Default verbose logging off; enable with -v/--verbose
 VERBOSE=0
+DRY_RUN=0
 
 # Optional arguments — default to empty
 CONFIG=""
@@ -38,8 +55,13 @@ FOO=""
 # Functions
 #########################################################################
 
-# execute - runs the renewal process against each datacenter
+# execute - main execution function
 execute() {
+    if [ "${DRY_RUN}" -eq 1 ]; then
+        verbose "dry run: would execute with FOO=${FOO}"
+        verbose "dry run: would call bar"
+        return
+    fi
     echo "Executing Processes - NOT YET IMPLEMENTED"
     echo "FOO: $FOO"
     bar
@@ -63,14 +85,14 @@ check_prerequisites() {
     IFS=':'
     for bin in $REQUIRED_BINARIES; do
         if ! type "$bin" > /dev/null 2>&1; then
-            echo "Missing required binary: $bin"
+            echo "Missing required binary: $bin" >&2
             missing_counter=$((missing_counter + 1))
         fi
     done
     IFS="$old_ifs"
 
     if [ "$missing_counter" -ne 0 ]; then
-        echo "Error: $missing_counter required binaries are missing."
+        echo "Error: $missing_counter required binaries are missing." >&2
         exit 1
     fi
 
@@ -92,7 +114,8 @@ errexit() {
     exit 1
 }
 
-# load_config - loads the config file if it exists
+# load_config - sources a shell config file
+# WARNING: sources file as shell — ensure trusted input
 load_config() {
     if [ -f "${CONFIG}" ]; then
         # shellcheck disable=SC1090
@@ -126,9 +149,6 @@ signal_exit() {
         ABRT)
             echo "${scriptname}: Abort signal received" >&2
             exit;;
-        KILL)
-            echo "${scriptname}: Kill signal received" >&2
-            exit;;
         ALRM)
             echo "${scriptname}: Alarm signal received" >&2
             ;;
@@ -142,10 +162,12 @@ usage() {
     echo "Usage: $scriptname [OPTIONS]"
     echo
     echo "Options:"
-    echo "  -h, --help      Displays the usage of the script"
+    echo "  -h, --help      Display this help"
     echo "  -v, --verbose   Enable verbose output"
-    echo "  -c, --config    Path to a config file to load"
-    echo "  -f, --foo       This is a generic placeholder to show how to add an option"
+    echo "  -n, --dry-run   Show what would be done without acting"
+    echo "  -c, --config    Path to a shell config file to source"
+    echo "  -f, --foo       Generic placeholder to show how to add an option"
+    echo "  --version       Print version and exit"
     echo
     echo "Example: ./$scriptname --foo foovalue"
 }
@@ -178,6 +200,14 @@ while [ "$#" -gt 0 ]; do
         -v|--verbose)
             VERBOSE=1
             shift
+            ;;
+        -n|--dry-run)
+            DRY_RUN=1
+            shift
+            ;;
+        --version)
+            echo "$scriptname $VERSION"
+            exit 0
             ;;
         -c|--config)
             CONFIG="$2"
