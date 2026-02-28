@@ -1,4 +1,5 @@
 #!/bin/sh
+set -eu
 # Author: Dennis Kendrick - denniskendrick@gmail.com
 # Description: This should contain an overall description on what
 #              this script performs.
@@ -23,11 +24,15 @@
 #-------------------------------------------------------------------
 scriptname="$(basename "$0")"
 
- # Required binaries for the script to execute. Modify according to your needs.
+# Required binaries for the script to execute. Modify according to your needs.
 REQUIRED_BINARIES="which"
 
-# Default verbose logging on 
-VERBOSE=1
+# Default verbose logging off; enable with -v/--verbose
+VERBOSE=0
+
+# Optional arguments — default to empty
+CONFIG=""
+FOO=""
 
 #########################################################################
 # Functions
@@ -54,12 +59,15 @@ check_prerequisites() {
     missing_counter=0
     verbose "Checking for prerequisites..."
 
-    IFS=':'; for bin in $REQUIRED_BINARIES; do
+    old_ifs="$IFS"
+    IFS=':'
+    for bin in $REQUIRED_BINARIES; do
         if ! type "$bin" > /dev/null 2>&1; then
             echo "Missing required binary: $bin"
             missing_counter=$((missing_counter + 1))
         fi
     done
+    IFS="$old_ifs"
 
     if [ "$missing_counter" -ne 0 ]; then
         echo "Error: $missing_counter required binaries are missing."
@@ -95,8 +103,8 @@ load_config() {
     fi
 }
 
-# printenv - prints all environment variables usually for debugging
-printenv() {
+# debug_env - prints all environment variables for debugging
+debug_env() {
     env | sort
 }
 
@@ -135,6 +143,7 @@ usage() {
     echo
     echo "Options:"
     echo "  -h, --help      Displays the usage of the script"
+    echo "  -v, --verbose   Enable verbose output"
     echo "  -c, --config    Path to a config file to load"
     echo "  -f, --foo       This is a generic placeholder to show how to add an option"
     echo
@@ -143,8 +152,8 @@ usage() {
 
 # verbose - prints a verbose message
 verbose() {
-    if [ ${VERBOSE} -eq 1 ]; then
-        echo "[INFO]: ${1}"
+    if [ "${VERBOSE}" -eq 1 ]; then
+        echo "[INFO]: ${1}" >&2
     fi
 }
 
@@ -165,6 +174,10 @@ while [ "$#" -gt 0 ]; do
         -h|--help)
             usage
             exit 0
+            ;;
+        -v|--verbose)
+            VERBOSE=1
+            shift
             ;;
         -c|--config)
             CONFIG="$2"
@@ -196,7 +209,7 @@ else
 fi
 
 # Uncomment below to debug the script environment variables
-#printenv
+#debug_env
 
 execute
 verbose "Process completed successfully."
